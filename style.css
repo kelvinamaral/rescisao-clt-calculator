@@ -1,0 +1,10 @@
+.rescisao-form p {
+    margin-bottom: 12px;
+}
+#result ul {
+    list-style: none;
+    padding: 0;
+}
+#result li {
+    margin-bottom: 4px;
+}
