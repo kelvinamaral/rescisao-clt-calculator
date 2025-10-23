@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Rescisão CLT - Calculadora
  * Description: Calculadora de rescisão CLT com regras da CLT e tabelas de INSS/IRRF. Use o shortcode [rescisao_clt_calculator].
- * Version: 3.0
+ * Version: 3.1
  * Author: Seu Nome
  */
 
@@ -15,11 +15,11 @@ class RescisaoCLTCalculator {
     }
 
     public function enqueue_assets() {
-                if (is_page() || is_single()) {
+        if (is_page() || is_single()) {
             global $post;
             if (has_shortcode($post->post_content, 'rescisao_clt_calculator')) {
                 wp_enqueue_style('rescisao-clt-style', plugins_url('style.css', __FILE__));
-                wp_enqueue_script('rescisao-clt-script', plugins_url('script.js', __FILE__), ['jquery'], '3.0', true);
+                wp_enqueue_script('rescisao-clt-script', plugins_url('script.js', __FILE__), ['jquery'], '3.1', true);
             }
         }
     }
@@ -33,7 +33,7 @@ class RescisaoCLTCalculator {
                 <div class="form-grid">
                     <p class="form-group">
                         <label for="salario">Salário Bruto (R$)</label>
-                        <input type="text" id="salario" placeholder="Ex: 2500,00" required>
+                        <input type="text" id="salario" placeholder="Ex: 1518,00" required>
                     </p>
                     <p class="form-group">
                         <label for="data_admissao">Data de Admissão</label>
@@ -61,17 +61,21 @@ class RescisaoCLTCalculator {
                             <option value="dispensado">Dispensado (não se aplica no pedido de demissão)</option>
                         </select>
                     </p>
-                </div>
-
-                <div class="form-options">
-                     <p class="form-group checkbox-group">
-                        <input type="checkbox" id="ferias_vencidas">
-                        <label for="ferias_vencidas">Possui férias vencidas não gozadas?</label>
+                    <p class="form-group">
+                        <label for="ferias_vencidas_select">Possui férias vencidas?</label>
+                        <select id="ferias_vencidas_select">
+                            <option value="nao" selected>Não</option>
+                            <option value="sim">Sim</option>
+                        </select>
+                    </p>
+                    <p id="dias_ferias_vencidas_group" class="form-group" style="display:none;">
+                        <label for="dias_ferias_vencidas">Dias de férias vencidas</label>
+                        <input type="number" id="dias_ferias_vencidas" value="30" min="1" max="30">
                     </p>
                 </div>
 
                 <p class="form-actions">
-                    <button type="button" id="calcular">Calcular Rescisão</button>
+                    <button type="button" id="calcular" class="elementor-button">Calcular Rescisão</button>
                 </p>
             </form>
 

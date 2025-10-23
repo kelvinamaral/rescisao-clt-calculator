@@ -8,6 +8,15 @@ jQuery(document).ready(function ($) {
         e.target.value = value;
     });
 
+    // Exibir/ocultar campo de dias de férias vencidas
+    $('#ferias_vencidas_select').on('change', function() {
+        if ($(this).val() === 'sim') {
+            $('#dias_ferias_vencidas_group').slideDown();
+        } else {
+            $('#dias_ferias_vencidas_group').slideUp();
+        }
+    });
+
     // Função para formatar número para o padrão monetário brasileiro
     function formatCurrency(value) {
         return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -53,6 +62,39 @@ jQuery(document).ready(function ($) {
         return irrf > 0 ? irrf : 0;
     }
 
+    // --- Helpers de datas --- 
+    function getMonthsForTermination(startDate, endDate) {
+        let months = 0;
+        let current = new Date(startDate);
+        current.setDate(1); // Normaliza para o primeiro dia do mês
+
+        while (current <= endDate) {
+            const year = current.getFullYear();
+            const month = current.getMonth();
+            const endOfMonth = new Date(year, month + 1, 0);
+
+            let workedDays = 0;
+            if (startDate.getFullYear() === year && startDate.getMonth() === month) {
+                // Mês de início
+                workedDays = endOfMonth.getDate() - startDate.getDate() + 1;
+            } else if (endDate.getFullYear() === year && endDate.getMonth() === month) {
+                // Mês de fim
+                workedDays = endDate.getDate();
+            } else {
+                // Mês intermediário
+                workedDays = endOfMonth.getDate();
+            }
+
+            if (workedDays >= 15) {
+                months++;
+            }
+
+            current.setMonth(month + 1);
+        }
+        return months;
+    }
+
+
     // === Evento Principal ===
     $('#calcular').on('click', function () {
         // Obter e limpar valores dos inputs
@@ -61,55 +103,89 @@ jQuery(document).ready(function ($) {
         const dataDemissao = new Date($('#data_demissao').val() + 'T00:00:00');
         const motivo = $('#motivo').val();
         const avisoPrevio = $('#aviso_previo').val();
-        const feriasVencidas = $('#ferias_vencidas').is(':checked');
+        const possuiFeriasVencidasInput = $('#ferias_vencidas_select').val() === 'sim';
 
         if (!salarioBruto || isNaN(dataAdmissao) || isNaN(dataDemissao)) {
             alert('Por favor, preencha todos os campos corretamente.');
             return;
         }
 
-        // --- CÁLCULOS --- 
-        let proventos = {},
-            descontos = {};
+        if (dataAdmissao > dataDemissao) {
+            alert('A data de admissão não pode ser posterior à data de demissão.');
+            return;
+        }
+
+        // --- Inicialização de Variáveis ---
+        let proventos = {
+            saldoSalario: 0,
+            avisoPrevioIndenizado: 0,
+            decimoTerceiro: 0,
+            decimoTerceiroIndenizado: 0,
+            feriasVencidas: 0,
+            tercoFeriasVencidas: 0,
+            feriasProporcionais: 0,
+            tercoFeriasProporcionais: 0,
+            feriasIndenizadas: 0,
+            tercoFeriasIndenizadas: 0
+        };
+        let descontos = {};
+
+        // --- CÁLCULOS ---
 
         // 1. Saldo de Salário
-        const diasTrabalhadosMes = dataDemissao.getDate();
-        proventos.saldoSalario = (salarioBruto / 30) * diasTrabalhadosMes;
+        proventos.saldoSalario = (salarioBruto / 30) * dataDemissao.getDate();
 
         // 2. Aviso Prévio
-        proventos.avisoPrevioIndenizado = 0;
         let diasAvisoPrevio = 0;
         if (motivo === 'dispensa_sem_justa_causa' && avisoPrevio === 'indenizado') {
-            const anosTrabalhados = Math.floor((dataDemissao - dataAdmissao) / (365.25 * 24 * 60 * 60 * 1000));
-            diasAvisoPrevio = 30 + (Math.min(anosTrabalhados, 20) * 3);
+            const anosTrabalhados = Math.floor((dataDemissao.getTime() - dataAdmissao.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+            diasAvisoPrevio = 30 + (Math.max(0, anosTrabalhados) * 3);
             proventos.avisoPrevioIndenizado = (salarioBruto / 30) * diasAvisoPrevio;
         }
 
-        // Data final para cálculo (considerando projeção do aviso)
-        const dataFinal = new Date(dataDemissao);
-        if (avisoPrevio === 'indenizado') {
-            dataFinal.setDate(dataFinal.getDate() + diasAvisoPrevio);
+        // 3. Data Final Projetada (inclui o aviso prévio para cálculo de 13º e Férias indenizadas)
+        const dataFinalProjetada = new Date(dataDemissao);
+        if (diasAvisoPrevio > 0) {
+            dataFinalProjetada.setDate(dataFinalProjetada.getDate() + diasAvisoPrevio);
         }
 
-        // 3. 13º Salário
-        const meses13 = dataFinal.getMonth() + 1;
-        proventos.decimoTerceiro = (salarioBruto / 12) * meses13;
-        proventos.decimoTerceiroIndenizado = 0; // Simplificado, já incluso na projeção
+        // 4. 13º Salário
+        const admissaoAnoCorrente = new Date(dataDemissao.getFullYear(), 0, 1);
+        if(dataAdmissao.getFullYear() === dataDemissao.getFullYear()){
+             admissaoAnoCorrente.setMonth(dataAdmissao.getMonth());
+             admissaoAnoCorrente.setDate(dataAdmissao.getDate());
+        }
+        const meses13Proporcional = getMonthsForTermination(admissaoAnoCorrente, dataDemissao);
+        proventos.decimoTerceiro = (salarioBruto / 12) * meses13Proporcional;
 
-        // 4. Férias
-        const mesesTrabalhadosTotal = Math.floor((dataFinal - dataAdmissao) / (1000 * 60 * 60 * 24 * 30.4375));
-        const avosFerias = mesesTrabalhadosTotal % 12;
+        const avos13Indenizado = getMonthsForTermination(dataDemissao, dataFinalProjetada) -1;
+        if (diasAvisoPrevio > 0 && avos13Indenizado > 0) {
+             proventos.decimoTerceiroIndenizado = (salarioBruto / 12) * avos13Indenizado;
+        }
 
-        proventos.feriasProporcionais = (salarioBruto / 12) * avosFerias;
+        // 5. Férias
+        const totalMesesTrabalhados = getMonthsForTermination(dataAdmissao, dataDemissao);
+        const periodosFeriasIntegrais = Math.floor(totalMesesTrabalhados / 12);
+        const mesesFeriasProporcionais = totalMesesTrabalhados % 12;
+
+        proventos.feriasVencidas = periodosFeriasIntegrais * salarioBruto;
+        if (possuiFeriasVencidasInput) {
+            proventos.feriasVencidas += salarioBruto; // Adiciona um período vencido extra se informado pelo usuário
+        }
+        proventos.tercoFeriasVencidas = proventos.feriasVencidas / 3;
+
+        proventos.feriasProporcionais = (salarioBruto / 12) * mesesFeriasProporcionais;
         proventos.tercoFeriasProporcionais = proventos.feriasProporcionais / 3;
-        proventos.feriasVencidas = feriasVencidas ? salarioBruto : 0;
-        proventos.tercoFeriasVencidas = feriasVencidas ? salarioBruto / 3 : 0;
-        proventos.feriasIndenizadas = 0; // Simplificado
-        proventos.tercoFeriasIndenizadas = 0; // Simplificado
+        
+        const avosFeriasIndenizadas = getMonthsForTermination(dataDemissao, dataFinalProjetada) - 1;
+        if (diasAvisoPrevio > 0 && avosFeriasIndenizadas > 0) {
+            proventos.feriasIndenizadas = (salarioBruto / 12) * avosFeriasIndenizadas;
+            proventos.tercoFeriasIndenizadas = proventos.feriasIndenizadas / 3;
+        }
 
-        // 5. Descontos
+        // 6. Descontos
         descontos.inssSalario = calcularINSS(proventos.saldoSalario);
-        descontos.inss13 = calcularINSS(proventos.decimoTerceiro);
+        descontos.inss13 = calcularINSS(proventos.decimoTerceiro + proventos.decimoTerceiroIndenizado);
         descontos.irrf = calcularIRRF(proventos.saldoSalario, descontos.inssSalario);
 
         // --- TOTAIS ---
@@ -139,7 +215,8 @@ jQuery(document).ready(function ($) {
 
         // FGTS (informativo)
         const fgtsMes = proventos.saldoSalario * 0.08;
-        const multaFgts = (motivo === 'dispensa_sem_justa_causa') ? (salarioBruto * mesesTrabalhadosTotal * 0.08) * 0.4 : 0;
+        // A multa é sobre o total depositado, esta é uma estimativa.
+        const multaFgts = (motivo === 'dispensa_sem_justa_causa') ? (salarioBruto * totalMesesTrabalhados * 0.08) * 0.4 : 0;
         $('#res-fgts-mes').text(formatCurrency(fgtsMes));
         $('#res-multa-fgts').text(formatCurrency(multaFgts));
 

@@ -66,18 +66,12 @@
 }
 
 #calcular {
-    background-color: #3498db;
-    color: white;
     padding: 12px 25px;
-    border: none;
-    border-radius: 5px;
     font-size: 1.1em;
     cursor: pointer;
-    transition: background-color 0.3s;
 }
 
 #calcular:hover {
-    background-color: #2980b9;
 }
 
 /* === Resultados === */
@@ -127,7 +121,7 @@
 
 /* === Resultado Final === */
 .resultado-final {
-    background-color: #3498db;
+    background-color: #142c44;
     color: white;
     text-align: center;
     padding: 15px;
@@ -138,7 +132,9 @@
 .resultado-final h3 {
     margin: 0 0 5px 0;
     font-size: 1.2em;
+    color: white;
 }
+
 
 .resultado-final p {
     margin: 0;
