@@ -1,10 +1,10 @@
-.rescisao-form p {
-    margin-bottom: 12px;
+.rescisao-form p { margin-bottom: 12px; }
+.rescisao-form input[type="number"], .rescisao-form input[type="date"], .rescisao-form select {
+    width: 100%;
+    padding: 8px;
+    box-sizing: border-box;
 }
-#result ul {
-    list-style: none;
-    padding: 0;
-}
-#result li {
-    margin-bottom: 4px;
-}
+#result ul { list-style: none; padding: 0; }
+#result li { margin-bottom: 6px; }
+.rescisao-legal { margin-top: 12px; font-size: 0.9em; color: #444; background:#f9f9f9; padding:10px; border-left:4px solid #ccc; }
+.note { margin-top:10px; font-size:0.95em; color:#222; background:#fffdf6; padding:8px; border-left:4px solid #f0c36d; }
