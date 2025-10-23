@@ -68,6 +68,14 @@ jQuery(document).ready(function ($) {
         }
     });
 
+    $('#ferVcd').on('change', function() {
+        if ($(this).val() === 'true') {
+            $('#dias_ferias_vencidas_group').slideDown();
+        } else {
+            $('#dias_ferias_vencidas_group').slideUp();
+        }
+    });
+
     // --- Funções Auxiliares de Data ---
 
     // Calcula a data de projeção do aviso prévio
@@ -375,6 +383,7 @@ jQuery(document).ready(function ($) {
         $('#ultSal').val('');
         $('#resultado').slideUp();
         $('#data_prev_group').slideUp();
+        $('#dias_ferias_vencidas_group').slideUp();
     });
 
     $('#calcular').on('click', function () {

@@ -84,13 +84,16 @@ class RescisaoCLTCalculator {
                             <option value="true">Sim (Períodos aquisitivos completos vencidos)</option>
                         </select>
                     </p>
+
+                    <p id="dias_ferias_vencidas_group" class="form-group" style="display:none;">
+                        <label for="diasFerVenc">Dias de férias vencidas</label>
+                        <input type="number" id="diasFerVenc" value="30" min="0">
+                    </p>
                     
                     <p class="form-group">
                         <label for="filhosMen14">Nº de Filhos Menores de 14 anos</label>
                         <input type="number" id="filhosMen14" value="0" min="0">
                     </p>
-                    
-                    <input type="hidden" id="diasFerVenc" value="30">
                 </div>
 
                 <p class="form-actions">
