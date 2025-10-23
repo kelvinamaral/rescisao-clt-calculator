@@ -3,7 +3,7 @@
  * Plugin Name: Rescisão CLT - Calculadora
  * Description: Calculadora de rescisão CLT com regras da CLT e tabelas de INSS/IRRF. Use o shortcode [rescisao_clt_calculator].
  * Version: 3.1
- * Author: Seu Nome
+ * Author: Kelvin Amaral
  */
 
 if (!defined('ABSPATH')) exit;
@@ -17,9 +17,17 @@ class RescisaoCLTCalculator {
     public function enqueue_assets() {
         if (is_page() || is_single()) {
             global $post;
+            // Verifica se o shortcode está no conteúdo do post ou se é um post/page
+            // Enqueue em todas as páginas e posts se não houver um método mais seletivo.
+            // Para ser mais seletivo, você precisaria de um plugin de scanner de shortcodes
+            // Para simplificar, vamos enfileirar se o shortcode for encontrado.
             if (has_shortcode($post->post_content, 'rescisao_clt_calculator')) {
+                // É necessário o 'moment-js' para replicar a lógica de datas do Vue/calculadora-rescisao.min.js
+                wp_enqueue_script('moment-js', 'https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js', [], '2.29.1', true);
+                
                 wp_enqueue_style('rescisao-clt-style', plugins_url('style.css', __FILE__));
-                wp_enqueue_script('rescisao-clt-script', plugins_url('script.js', __FILE__), ['jquery'], '3.1', true);
+                // Certifique-se de que o script.js depende de 'jquery' e 'moment-js'
+                wp_enqueue_script('rescisao-clt-script', plugins_url('script.js', __FILE__), ['jquery', 'moment-js'], '3.1', true);
             }
         }
     }
@@ -32,50 +40,62 @@ class RescisaoCLTCalculator {
 
                 <div class="form-grid">
                     <p class="form-group">
-                        <label for="salario">Salário Bruto (R$)</label>
-                        <input type="text" id="salario" placeholder="Ex: 1518,00" required>
+                        <label for="ultSal">Salário Bruto (R$)</label>
+                        <input type="text" id="ultSal" placeholder="Ex: 1518,00" required>
                     </p>
                     <p class="form-group">
-                        <label for="data_admissao">Data de Admissão</label>
-                        <input type="date" id="data_admissao" required>
+                        <label for="dataAdm">Data de Admissão</label>
+                        <input type="date" id="dataAdm" required>
                     </p>
                     <p class="form-group">
-                        <label for="data_demissao">Data de Demissão</label>
-                        <input type="date" id="data_demissao" required>
+                        <label for="dataRec">Data da Rescisão</label>
+                        <input type="date" id="dataRec" required>
                     </p>
                     <p class="form-group">
-                        <label for="motivo">Motivo da Rescisão</label>
-                        <select id="motivo" required>
-                            <option value="dispensa_sem_justa_causa">Dispensa sem justa causa</option>
-                            <option value="pedido_demissao">Pedido de demissão</option>
-                            <option value="dispensa_com_justa_causa">Dispensa com justa causa</option>
-                            <option value="acordo_empregador">Rescisão por acordo</option>
-                            <option value="contrato_experiencia">Término de contrato de experiência</option>
+                        <label for="motResc">Motivo da Rescisão</label>
+                        <select id="motResc" required>
+                            <option value="">Selecione...</option>
+                            <option value="semJustaCausa">Dispensa sem justa causa</option>
+                            <option value="pediDemiss">Pedido de demissão</option>
+                            <option value="comJustaCausa">Dispensa com justa causa</option>
+                            <option value="rescAntEmpre">Rescisão Antecipada pelo Empregador (Contrato Prazo)</option>
+                            <option value="rescAntFunc">Rescisão Antecipada pelo Funcionário (Contrato Prazo)</option>
+                            <option value="expTermino">Término de Contrato de Experiência/Prazo</option>
                         </select>
                     </p>
+                    
+                    <p id="data_prev_group" class="form-group" style="display:none;">
+                        <label for="dataPrev">Data Prevista de Término do Contrato</label>
+                        <input type="date" id="dataPrev">
+                    </p>
+
                     <p class="form-group">
-                        <label for="aviso_previo">Aviso Prévio</label>
-                        <select id="aviso_previo" required>
-                            <option value="indenizado">Indenizado</option>
-                            <option value="trabalhado">Trabalhado</option>
-                            <option value="dispensado">Dispensado (não se aplica no pedido de demissão)</option>
+                        <label for="avsPrev">Aviso Prévio (Dispensa sem Justa Causa)</label>
+                        <select id="avsPrev" required>
+                            <option value="0">Trabalhado</option>
+                            <option value="1">Indenizado</option>
+                            </select>
+                    </p>
+                    
+                    <p class="form-group">
+                        <label for="ferVcd">Possui Férias Vencidas Integrais?</label>
+                        <select id="ferVcd">
+                            <option value="false" selected>Não</option>
+                            <option value="true">Sim (Períodos aquisitivos completos vencidos)</option>
                         </select>
                     </p>
+                    
                     <p class="form-group">
-                        <label for="ferias_vencidas_select">Possui férias vencidas?</label>
-                        <select id="ferias_vencidas_select">
-                            <option value="nao" selected>Não</option>
-                            <option value="sim">Sim</option>
-                        </select>
+                        <label for="filhosMen14">Nº de Filhos Menores de 14 anos</label>
+                        <input type="number" id="filhosMen14" value="0" min="0">
                     </p>
-                    <p id="dias_ferias_vencidas_group" class="form-group" style="display:none;">
-                        <label for="dias_ferias_vencidas">Dias de férias vencidas</label>
-                        <input type="number" id="dias_ferias_vencidas" value="30" min="1" max="30">
-                    </p>
+                    
+                    <input type="hidden" id="diasFerVenc" value="30">
                 </div>
 
                 <p class="form-actions">
                     <button type="button" id="calcular" class="elementor-button">Calcular Rescisão</button>
+                    <button type="button" id="limpar" class="elementor-button" style="background-color:#c0392b; margin-left:10px;">Limpar</button>
                 </p>
             </form>
 
@@ -86,19 +106,21 @@ class RescisaoCLTCalculator {
                     <h4>Proventos</h4>
                     <table>
                         <tbody>
-                            <tr><td>Saldo do salário</td><td id="res-saldo-salario">R$ 0,00</td></tr>
-                            <tr><td>Aviso prévio indenizado</td><td id="res-aviso-previo">R$ 0,00</td></tr>
-                            <tr><td>13º salário proporcional</td><td id="res-13-proporcional">R$ 0,00</td></tr>
-                            <tr><td>13º salário indenizado</td><td id="res-13-indenizado">R$ 0,00</td></tr>
-                            <tr><td>Férias vencidas</td><td id="res-ferias-vencidas">R$ 0,00</td></tr>
-                            <tr><td>1/3 sobre férias vencidas</td><td id="res-terco-ferias-vencidas">R$ 0,00</td></tr>
-                            <tr><td>Férias proporcionais</td><td id="res-ferias-proporcionais">R$ 0,00</td></tr>
-                            <tr><td>1/3 Sobre férias proporcionais</td><td id="res-terco-ferias-proporcionais">R$ 0,00</td></tr>
-                            <tr><td>Férias indenizadas (sobre aviso)</td><td id="res-ferias-indenizadas">R$ 0,00</td></tr>
-                            <tr><td>1/3 Sobre férias indenizadas</td><td id="res-terco-ferias-indenizadas">R$ 0,00</td></tr>
+                            <tr><td>Saldo do salário</td><td id="res-saldo-salario" class="money">R$ 0,00</td></tr>
+                            <tr><td>Aviso prévio indenizado</td><td id="res-aviso-previo" class="money">R$ 0,00</td></tr>
+                            <tr><td>Reembolso Contrato Antecipado Empregador</td><td id="res-rec-ant-empre" class="money">R$ 0,00</td></tr>
+                            <tr><td>Salário Família</td><td id="res-sal-famili" class="money">R$ 0,00</td></tr>
+                            <tr><td>13º salário proporcional</td><td id="res-13-proporcional" class="money">R$ 0,00</td></tr>
+                            <tr><td>13º salário indenizado</td><td id="res-13-indenizado" class="money">R$ 0,00</td></tr>
+                            <tr><td>Férias vencidas (30 dias ou mais)</td><td id="res-ferias-vencidas" class="money">R$ 0,00</td></tr>
+                            <tr><td>1/3 sobre férias vencidas</td><td id="res-terco-ferias-vencidas" class="money">R$ 0,00</td></tr>
+                            <tr><td>Férias proporcionais</td><td id="res-ferias-proporcionais" class="money">R$ 0,00</td></tr>
+                            <tr><td>1/3 Sobre férias proporcionais</td><td id="res-terco-ferias-proporcionais" class="money">R$ 0,00</td></tr>
+                            <tr><td>Férias Indenizadas (sobre aviso)</td><td id="res-ferias-indenizadas" class="money">R$ 0,00</td></tr>
+                            <tr><td>1/3 Sobre Férias Indenizadas</td><td id="res-terco-ferias-indenizadas" class="money">R$ 0,00</td></tr>
                         </tbody>
                         <tfoot>
-                            <tr class="total"><td>TOTAL DE PROVENTOS</td><td id="res-total-proventos">R$ 0,00</td></tr>
+                            <tr class="total"><td>TOTAL DE PROVENTOS</td><td id="res-total-proventos" class="money">R$ 0,00</td></tr>
                         </tfoot>
                     </table>
                 </div>
@@ -107,27 +129,30 @@ class RescisaoCLTCalculator {
                     <h4>Descontos</h4>
                     <table>
                         <tbody>
-                            <tr><td>INSS sobre Saldo de Salário</td><td id="res-inss-salario">R$ 0,00</td></tr>
-                            <tr><td>IRRF sobre Saldo de Salário</td><td id="res-irrf-salario">R$ 0,00</td></tr>
-                            <tr><td>INSS sobre 13º Salário</td><td id="res-inss-13">R$ 0,00</td></tr>
+                            <tr><td>INSS sobre Saldo de Salário</td><td id="res-inss-salario" class="money">R$ 0,00</td></tr>
+                            <tr><td>IRRF sobre Saldo de Salário</td><td id="res-irrf-salario" class="money">R$ 0,00</td></tr>
+                            <tr><td>INSS sobre 13º Salário</td><td id="res-inss-13" class="money">R$ 0,00</td></tr>
+                            <tr><td>IRRF sobre 13º Salário</td><td id="res-irrf-13" class="money">R$ 0,00</td></tr>
+                            <tr><td>Aviso Prévio Descontado (Pedido Demissão)</td><td id="res-desc-avs-prev" class="money">R$ 0,00</td></tr>
+                            <tr><td>Multa Contrato Antecipado Funcionário</td><td id="res-desc-resc-ant" class="money">R$ 0,00</td></tr>
                         </tbody>
                         <tfoot>
-                            <tr class="total"><td>TOTAL DE DESCONTOS</td><td id="res-total-descontos">R$ 0,00</td></tr>
+                            <tr class="total"><td>TOTAL DE DESCONTOS</td><td id="res-total-descontos" class="money">R$ 0,00</td></tr>
                         </tfoot>
                     </table>
                 </div>
 
                 <div class="resultado-final">
                     <h3>LÍQUIDO A RECEBER</h3>
-                    <p id="res-liquido">R$ 0,00</p>
+                    <p id="res-liquido" class="money">R$ 0,00</p>
                 </div>
 
                  <div class="resultado-info-adicional">
                     <h4>Outras Informações (Não incluídas no líquido)</h4>
                     <table>
                         <tbody>
-                            <tr><td>FGTS a ser depositado na rescisão</td><td id="res-fgts-mes">R$ 0,00</td></tr>
-                            <tr><td>Multa de 40% sobre FGTS (estimativa)</td><td id="res-multa-fgts">R$ 0,00</td></tr>
+                            <tr><td>FGTS a ser depositado na rescisão</td><td id="res-fgts-mes" class="money">R$ 0,00</td></tr>
+                            <tr><td>Multa de 40% sobre FGTS (estimativa)</td><td id="res-multa-fgts" class="money">R$ 0,00</td></tr>
                         </tbody>
                     </table>
                 </div>

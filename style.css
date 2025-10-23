@@ -166,3 +166,26 @@
         padding: 15px;
     }
 }
+
+/* Estilo para botões (garantindo que o Limpar fique bom) */
+.form-actions button.elementor-button {
+    /* Adicione quaisquer estilos que seu tema aplique ao .elementor-button */
+}
+
+#limpar {
+    /* Cor de destaque para o botão Limpar (opcional) */
+    background-color: #e74c3c !important; 
+    border-color: #e74c3c !important;
+}
+
+#limpar:hover {
+    background-color: #c0392b !important;
+    border-color: #c0392b !important;
+}
+
+/* Garante que o grid se comporte bem com mais campos */
+@media (min-width: 601px) {
+    .rescisao-form .form-grid {
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* Mais flexível */
+    }
+}
