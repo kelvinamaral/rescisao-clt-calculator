@@ -1,238 +1,234 @@
 jQuery(document).ready(function($){
+    
+    // --- FUNÇÕES UTILITÁRIAS ---
     function formatBR(v){
         return Number(v).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
     }
 
+    // Retorna dias do mês (base 0-11)
     function daysInMonth(year, monthIndex){
-        return new Date(year, monthIndex+1, 0).getDate();
+        return new Date(year, monthIndex + 1, 0).getDate();
+    }
+    
+    // Calcula dias de aviso prévio (30 + 3/ano)
+    function calculateAvisoDays(admissionDate, dismissalDate) {
+        const diffTime = Math.abs(dismissalDate.getTime() - admissionDate.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        const fullYears = Math.floor(diffDays / 365.25);
+        const extraDays = Math.min(fullYears * 3, 60); 
+        return 30 + extraDays;
     }
 
-    // calcula meses trabalhados no ano da demissão usando regra de 15 dias
-    function monthsWorkedInYear(admDate, disDate){
-        const disYear = disDate.getFullYear();
-        // início: se admissão no mesmo ano da demissão, começa no mês da admissão; senão começa em jan do ano da demissão
-        let startMonth = (admDate.getFullYear() === disYear) ? admDate.getMonth() : 0;
-        let endMonth = disDate.getMonth();
+    // Calcula meses proporcionais (Regra de +15 dias)
+    function monthsWorkedInYear(admDate, projectedDisDate) {
+        const disYear = projectedDisDate.getFullYear();
+        // Ponto de partida: 1º de Jan do ano da projeção, ou data de admissão se for no mesmo ano
+        const startOfProportionalPeriod = (admDate.getFullYear() === disYear) ? admDate : new Date(disYear, 0, 1);
+        
         let months = 0;
+        // Inicia no dia 1 do mês de início do período
+        let currentDate = new Date(startOfProportionalPeriod.getFullYear(), startOfProportionalPeriod.getMonth(), 1);
 
-        for(let m = startMonth; m <= endMonth; m++){
-            let year = disYear;
-            let startDay = 1;
-            let endDay = daysInMonth(year, m);
-
-            if(m === admDate.getMonth() && admDate.getFullYear() === disYear){
-                startDay = admDate.getDate();
+        while (currentDate <= projectedDisDate) {
+            const currentYear = currentDate.getFullYear();
+            const currentMonth = currentDate.getMonth();
+            
+            // Fim do mês a verificar
+            let endDayCheck = daysInMonth(currentYear, currentMonth);
+            if (currentYear === projectedDisDate.getFullYear() && currentMonth === projectedDisDate.getMonth()) {
+                endDayCheck = projectedDisDate.getDate();
             }
-            if(m === disDate.getMonth()){
-                endDay = disDate.getDate();
+
+            // Início do mês a verificar
+            let startDayCheck = 1;
+            if (currentYear === startOfProportionalPeriod.getFullYear() && currentMonth === startOfProportionalPeriod.getMonth()) {
+                startDayCheck = startOfProportionalPeriod.getDate();
             }
 
-            const daysWorkedThisMonth = endDay - startDay + 1;
-            // regra: 15 dias ou mais conta como mês completo
-            if(daysWorkedThisMonth >= 15) months += 1;
+            const daysWorkedThisMonth = endDayCheck - startDayCheck + 1;
+            
+            if (daysWorkedThisMonth >= 15) {
+                months++;
+            }
+
+            // Avança para o dia 1 do próximo mês
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            if (currentDate.getMonth() === 0) currentDate.setFullYear(currentYear + 1);
+
+            if (currentDate.getTime() > projectedDisDate.getTime()) break; 
+            if (months >= 12) break;
         }
-
-        if(months < 0) months = 0;
-        if(months > 12) months = 12;
-        return months;
+        
+        return Math.min(12, Math.max(0, months));
     }
 
+    // --- EVENT HANDLER PRINCIPAL (v3.0) ---
     $("#calcBtn").on("click", function(){
-        // inputs
-        const rawSalary = $("#salary").val();
-        const salary = parseFloat(String(rawSalary).replace(',','.')) || 0;
-        const admissionRaw = $("#admission").val();
-        const dismissalRaw = $("#dismissal").val();
-        const daysWorkedInput = $("#days_worked").val();
-        const type = $("#type").val();
-        const avisoInd = $("#aviso_indennizado").is(":checked");
-        const feriasVencidas = $("#vacation_vencida").is(":checked");
-        const feriasDias = parseInt($("#vacation_days").val()) || 30;
-        const fgtsBalanceRaw = $("#fgts_balance").val();
-        const fgtsBalance = parseFloat(String(fgtsBalanceRaw).replace(',','.')) || 0;
+        
+        // 1. LEITURA DOS CAMPOS (v3.0)
+        const salario = parseFloat($("#salario_bruto").val()) || 0;
+        const admission = new Date($("#data_contratacao").val());
+        const dismissal = new Date($("#data_dispensa").val()); // Último dia trabalhado
+        const type = $("#forma_demissao").val();
+        const avisoType = $("#aviso_previo").val();
+        
+        const feriasVencidasDias = parseInt($("#ferias_vencidas_dias").val()) || 0;
+        const decimoAtrasadoQtd = parseInt($("#decimo_terceiro_atrasado").val()) || 0;
+        const horasExtrasValor = parseFloat($("#horas_extras_valor").val()) || 0;
+        const adicionalCheck = $("#adicional_insalubridade").is(":checked");
+        
+        const resultDiv = $("#result");
+        resultDiv.empty();
 
-        // validações básicas
-        if(!(rawSalary && admissionRaw && dismissalRaw)){
-            alert("Preencha salário, data de admissão e data de demissão.");
+        // 2. VALIDAÇÕES
+        if (!salario || isNaN(admission) || isNaN(dismissal) || !type || !avisoType) {
+            resultDiv.html('<h3>Erro de Validação</h3><p style="color: red;">Preencha todos os campos obrigatórios (Salário, Datas, Forma de Demissão e Aviso Prévio).</p>');
+            return;
+        }
+        if (dismissal < admission) {
+            resultDiv.html('<h3>Erro de Validação</h3><p style="color: red;">A Data de Dispensa não pode ser anterior à Data de Contratação.</p>');
             return;
         }
 
-        const admission = new Date(admissionRaw);
-        const dismissal = new Date(dismissalRaw);
+        // --- 3. PREPARAÇÃO DE DADOS ---
+        
+        // ** CORREÇÃO DO BUG (R$ 86,67) **
+        // Usa o "mês comercial" de 30 dias como base de cálculo
+        const valorDia = salario / 30;
+        const valorMes = salario / 12;
 
-        if(isNaN(admission.getTime()) || isNaN(dismissal.getTime())){
-            alert("Datas inválidas. Verifique os campos de data.");
-            return;
+        let projectedDismissalDate = new Date(dismissal); // Data final do contrato
+        let avisoValor = 0;
+        let avisoDesconto = 0;
+
+        if (avisoType === "indenizado" && (type === "sem_justa_causa" || type === "rescisao_indireta")) {
+            const diasAvisoTotal = calculateAvisoDays(admission, dismissal);
+            avisoValor = valorDia * diasAvisoTotal;
+            // Projeta a data final do contrato
+            projectedDismissalDate.setDate(dismissal.getDate() + diasAvisoTotal);
+            
+        } else if (avisoType === "nao_cumprido" && type === "pedido_demissao") {
+            // Pedido de demissão sem cumprir, desconta 30 dias (1 salário)
+            avisoDesconto = salario; 
+        }
+        // Se avisoType == "trabalhado", a data de dispensa já é o último dia.
+
+        // Dias trabalhados no mês (baseado na data de dispensa)
+        const daysWorkedInDismissalMonth = dismissal.getDate(); 
+        
+        // Meses Proporcionais (13º e Férias) - USA A DATA PROJETADA
+        const proportionalMonths = monthsWorkedInYear(admission, projectedDismissalDate);
+
+        // --- 4. CÁLCULO DE VERBAS ---
+        let proventos = 0;
+        let descontos = 0;
+
+        // 1. Saldo de Salário
+        const saldoSalario = valorDia * daysWorkedInDismissalMonth;
+        proventos += saldoSalario;
+
+        // 2. Aviso Prévio (calculado na seção 3)
+        if (avisoValor > 0) {
+            proventos += avisoValor;
+        }
+        if (avisoDesconto > 0) {
+            descontos += avisoDesconto;
         }
 
-        if(dismissal < admission){
-            alert("Erro: a data de demissão não pode ser anterior à data de admissão.");
-            return;
+        // 3. 13º Salário Proporcional
+        let decimoProporcional = 0;
+        if (type !== "com_justa_causa") { // Perde na Justa Causa
+            decimoProporcional = valorMes * proportionalMonths;
+            proventos += decimoProporcional;
+        }
+        
+        // 4. Férias Proporcionais + 1/3
+        let feriasPropComTerco = 0;
+        if (type !== "com_justa_causa") { // Perde na Justa Causa
+            const feriasPropSimples = valorMes * proportionalMonths;
+            feriasPropComTerco = feriasPropSimples * (4/3); // Já inclui o 1/3
+            proventos += feriasPropComTerco;
         }
 
-        // cálculo de dias possíveis no mês da demissão (para validação de daysWorked)
-        const disYear = dismissal.getFullYear();
-        const disMonth = dismissal.getMonth();
-        const daysInDisMonth = daysInMonth(disYear, disMonth);
-
-        // cálculo automático de dias trabalhados no mês da rescisão se usuário deixou em branco
-        let daysWorkedCalculated;
-        if(admission.getFullYear() === dismissal.getFullYear() && admission.getMonth() === dismissal.getMonth()){
-            // admissão e demissão no mesmo mês
-            daysWorkedCalculated = dismissal.getDate() - admission.getDate() + 1;
-        } else {
-            // admissão em mês anterior, dias trabalhados por padrão é dia da demissão
-            daysWorkedCalculated = dismissal.getDate();
+        // 5. Férias Vencidas + 1/3 (Direito adquirido, pago até em justa causa)
+        let feriasVencValor = 0;
+        if (feriasVencidasDias > 0) {
+            const feriasVencSimples = valorDia * feriasVencidasDias;
+            feriasVencValor = feriasVencSimples * (4/3); // Já inclui o 1/3
+            proventos += feriasVencValor;
         }
-        if(daysWorkedCalculated < 0) daysWorkedCalculated = 0;
-        if(daysWorkedCalculated > daysInDisMonth) daysWorkedCalculated = daysInDisMonth;
-
-        let daysWorked = daysWorkedInput ? parseInt(daysWorkedInput) : daysWorkedCalculated;
-        if(isNaN(daysWorked) || daysWorked < 0) daysWorked = daysWorkedCalculated;
-        // força limites
-        if(daysWorked > daysInDisMonth) {
-            alert("O campo Dias trabalhados excede o número de dias do mês da demissão. Ajustei para o máximo do mês.");
-            daysWorked = daysInDisMonth;
+        
+        // 6. Verbas Atrasadas (Campos novos)
+        let decimoAtrasadoValor = 0;
+        if (decimoAtrasadoQtd > 0) {
+            decimoAtrasadoValor = salario * decimoAtrasadoQtd;
+            proventos += decimoAtrasadoValor;
         }
-        // Se admissão no mesmo mês, também valida contra dias entre adm e dis
-        if(admission.getFullYear() === dismissal.getFullYear() && admission.getMonth() === dismissal.getMonth()){
-            const maxPossible = dismissal.getDate() - admission.getDate() + 1;
-            if(daysWorked > maxPossible){
-                alert("Dias trabalhados excedem o período entre admissão e demissão no mesmo mês. Ajustei automaticamente.");
-                daysWorked = maxPossible;
-            }
+        
+        if (horasExtrasValor > 0) {
+            proventos += horasExtrasValor;
         }
 
-        if(salary <= 0){
-            alert("Salário deve ser maior que zero.");
-            return;
+        // --- 5. EXIBIÇÃO DE RESULTADOS ---
+        let html = `<h3>Resultado Estimado (BRUTO)</h3>`;
+        html += `<h4>Verbas Rescisórias (Proventos)</h4>`;
+        html += `<ul class="rescisao-results-list">`;
+        html += `<li><span>Saldo de salário (${daysWorkedInDismissalMonth} dias):</span> <strong>R$ ${formatBR(saldoSalario)}</strong></li>`;
+        
+        if (avisoValor > 0) {
+            html += `<li><span>Aviso prévio indenizado:</span> <strong>R$ ${formatBR(avisoValor)}</strong></li>`;
         }
-
-        // Saldo de salário
-        const saldoSalario = (salary / 30) * Math.min(30, daysWorked);
-
-        // meses proporcionais para 13º e férias (regra dos 15 dias)
-        const monthsProporcionais = monthsWorkedInYear(admission, dismissal);
-
-        const decimo = (salary * monthsProporcionais) / 12;
-
-        // férias proporcionais (sem 1/3)
-        const feriasProporcionaisBase = (salary * monthsProporcionais) / 12;
-        const feriasProporcionaisTerco = feriasProporcionaisBase / 3;
-        const feriasProporcionaisTotal = feriasProporcionaisBase + feriasProporcionaisTerco;
-
-        // férias vencidas (base + 1/3)
-        let feriasVencidasBase = 0;
-        let feriasVencidasTerco = 0;
-        let feriasVencidasTotal = 0;
-        if(feriasVencidas){
-            feriasVencidasBase = (salary / 30) * feriasDias;
-            feriasVencidasTerco = feriasVencidasBase / 3;
-            feriasVencidasTotal = feriasVencidasBase + feriasVencidasTerco;
+        if (decimoProporcional > 0) {
+            html += `<li><span>13º Salário Proporcional (${proportionalMonths}/12):</span> <strong>R$ ${formatBR(decimoProporcional)}</strong></li>`;
         }
-
-        // aviso prévio: só aplica proporcional extra se demissão pelo empregador (sem justa causa) ou acordo
-        let diffYears = dismissal.getFullYear() - admission.getFullYear() -
-            (dismissal < new Date(dismissal.getFullYear(), admission.getMonth(), admission.getDate()) ? 1 : 0);
-        if(diffYears < 0) diffYears = 0;
-        let avisoExtra = 0;
-        if(type === "sem_justa_causa" || type === "acordo"){
-            avisoExtra = Math.min(diffYears * 3, 60);
+        if (feriasPropComTerco > 0) {
+            html += `<li><span>Férias Proporcionais +1/3 (${proportionalMonths}/12):</span> <strong>R$ ${formatBR(feriasPropComTerco)}</strong></li>`;
         }
-        const avisoDaysPotential = 30 + avisoExtra;
-
-        // cálculo do valor do aviso pago/indenizado/desconto
-        let avisoPago = 0;
-        let descontoAviso = 0;
-        if(avisoInd){
-            // indenizado: paga todo avisoDaysPotential
-            avisoPago = (salary / 30) * avisoDaysPotential;
-        } else {
-            // não indenizado -> aviso trabalhado para demissão pelo empregador: empregado recebe salário normal durante aviso, portanto não há verba adicional a ind. 
-            // Para pedido de demissão não cumprido, deve descontar 30 dias de salário.
-            if(type === "pedido"){
-                descontoAviso = (salary / 30) * 30;
-            } else {
-                // avisado trabalhado pelo empregado: não adicionar indenização
-                avisoPago = 0;
-            }
+        if (feriasVencValor > 0) {
+            html += `<li><span>Férias Vencidas +1/3 (${feriasVencidasDias} dias):</span> <strong>R$ ${formatBR(feriasVencValor)}</strong></li>`;
         }
-
-        // total proventos (sem multa do FGTS)
-        const proventos = saldoSalario + avisoPago + decimo + feriasProporcionaisTotal + feriasVencidasTotal;
-
-        // base de FGTS: incide sobre verbas salariais (saldo salário + aviso pago + 13º + férias base sem 1/3)
-        const fgtsBase = saldoSalario + avisoPago + decimo + feriasProporcionaisBase + feriasVencidasBase;
-        const fgtsDeposit = fgtsBase * 0.08;
-
-        // multa FGTS: somente se usuário informar saldo do FGTS na conta
-        let multaFgts = 0;
-        let multaFgtsNote = "";
-        if(fgtsBalance > 0){
-            if(type === "sem_justa_causa"){
-                multaFgts = fgtsBalance * 0.40;
-                multaFgtsNote = " (estimativa, baseada no saldo informado)";
-            } else if(type === "acordo"){
-                multaFgts = fgtsBalance * 0.20;
-                multaFgtsNote = " (estimativa, baseada no saldo informado)";
-            } else {
-                multaFgts = 0;
-                multaFgtsNote = " (não aplicável para pedido de demissão)";
-            }
-        } else {
-            multaFgtsNote = " (não calculada sem saldo do FGTS)";
+        if (decimoAtrasadoValor > 0) {
+            html += `<li><span>13º Atrasados (${decimoAtrasadoQtd} ano(s)):</span> <strong>R$ ${formatBR(decimoAtrasadoValor)}</strong></li>`;
         }
-
-        // descontos (somente aviso não cumprido por enquanto)
-        const descontos = descontoAviso;
-        const totalLiquidoEstimado = proventos - descontos;
-
-        // montagem do resultado
-        let html = `<h3>Resultado estimado (bruto)</h3>`;
-        html += `<ul>`;
-        html += `<li>Saldo de salário: R$ ${formatBR(saldoSalario)}</li>`;
-        html += `<li>Aviso prévio (potencial ${avisoDaysPotential} dias): R$ ${formatBR(avisoPago)}${avisoInd ? " (indenizado)" : (type === "pedido" ? " (pode gerar desconto se não cumprido)" : " (presumido trabalhado)")}</li>`;
-        html += `<li>13º proporcional (${monthsProporcionais} meses): R$ ${formatBR(decimo)}</li>`;
-        html += `<li>Férias proporcionais (base R$ ${formatBR(feriasProporcionaisBase)} +1/3 = R$ ${formatBR(feriasProporcionaisTotal)}): R$ ${formatBR(feriasProporcionaisTotal)}</li>`;
-        if(feriasVencidasTotal > 0){
-            html += `<li>Férias vencidas (base R$ ${formatBR(feriasVencidasBase)} +1/3 = R$ ${formatBR(feriasVencidasTotal)}): R$ ${formatBR(feriasVencidasTotal)}</li>`;
-        }
-        html += `<li><strong>Total de proventos estimados: R$ ${formatBR(proventos)}</strong></li>`;
-        html += `</ul>`;
-
-        html += `<h4>FGTS</h4>`;
-        html += `<ul>`;
-        html += `<li>Base de cálculo do FGTS (8%): R$ ${formatBR(fgtsBase)}</li>`;
-        html += `<li>Depósito estimado FGTS (8%): R$ ${formatBR(fgtsDeposit)}</li>`;
-        if(fgtsBalance > 0){
-            html += `<li>Multa FGTS estimada${multaFgtsNote}: R$ ${formatBR(multaFgts)}</li>`;
-        } else {
-            html += `<li>Multa FGTS: não calculada. Informe o saldo do FGTS para estimativa.</li>`;
+        if (horasExtrasValor > 0) {
+            html += `<li><span>Horas Extras não pagas:</span> <strong>R$ ${formatBR(horasExtrasValor)}</strong></li>`;
         }
         html += `</ul>`;
 
-        html += `<h4>Descontos</h4>`;
-        html += `<ul>`;
-        html += `<li>Desconto por não cumprimento de aviso (se aplicável): R$ ${formatBR(descontoAviso)}</li>`;
+        // --- DESCONTOS ---
+        if (descontos > 0) {
+            html += `<h4>Descontos</h4>`;
+            html += `<ul class="rescisao-results-list">`;
+            html += `<li><span>Aviso prévio não cumprido (desconto):</span> <strong>R$ ${formatBR(descontos)}</strong></li>`;
+            html += `</ul>`;
+        }
+
+        // --- TOTAIS ---
+        const totalProventos = proventos;
+        const totalEstimado = totalProventos - descontos;
+        
+        html += `<h4>Total Estimado</h4>`;
+        html += `<ul class="rescisao-results-list total-list">`;
+        html += `<li><span>Total de Proventos:</span> R$ ${formatBR(totalProventos)}</li>`;
+        if (descontos > 0) html += `<li><span>Total de Descontos:</span> R$ ${formatBR(descontos)}</li>`;
+        html += `<li><strong>Total Líquido Estimado (Antes de INSS/IRRF):</strong> <strong>R$ ${formatBR(totalEstimado)}</strong></li>`;
         html += `</ul>`;
 
-        html += `<h4>Totais</h4>`;
-        html += `<ul>`;
-        html += `<li>Total proventos: R$ ${formatBR(proventos)}</li>`;
-        if(multaFgts > 0) html += `<li>Multa FGTS (se informada): R$ ${formatBR(multaFgts)}</li>`;
-        html += `<li>Total descontos: R$ ${formatBR(descontos)}</li>`;
-        const totalGeralEstimado = proventos + multaFgts - descontos;
-        html += `<li><strong>Total geral estimado (proventos + multa FGTS - descontos): R$ ${formatBR(totalGeralEstimado)}</strong></li>`;
-        html += `</ul>`;
+        // --- AVISOS LEGAIS ---
+        let obs = `<div class="note"><strong>Observações:</strong><ul>`;
+        obs += `<li>O Saldo de Salário foi calculado com base no <strong>mês comercial (30 dias)</strong>.</li>`;
+        obs += `<li>Cálculos de 13º e Férias Proporcionais respeitam a regra de 15 dias para 1/12 avos.</li>`;
+        
+        if (avisoType === "indenizado" && (type === "sem_justa_causa" || type === "rescisao_indireta")) {
+             obs += `<li>Os cálculos proporcionais foram estendidos até a data final projetada do contrato (${projectedDismissalDate.toLocaleDateString('pt-BR')}).</li>`;
+        }
+        
+        if (adicionalCheck) {
+            obs += `<li style="color: #b00; font-weight: bold;"><strong>ADICIONAL DE INSALUBRIDADE/PERICULOSIDADE:</strong> Você marcou esta opção. Se este adicional não estava incluído no seu 'Salário Bruto', os valores aqui apresentados estão SUBESTIMADOS. Este adicional deve ser integrado à base de cálculo de todas as verbas. Procure um contador ou advogado.</li>`;
+        }
+        obs += `</ul></div>`;
+        html += obs;
 
-        html += `<div class="note"><strong>Observações:</strong>
-            <ul>
-                <li>Valores são estimativas. INSS, IRRF e outros descontos não foram aplicados.</li>
-                <li>Multa FGTS só foi calculada se você informou o saldo do FGTS. Caso contrário o valor correto depende do histórico de depósitos.</li>
-                <li>FGTS foi calculado sobre a base definida no resultado. O 1/3 constitucional das férias não integra a base do FGTS aqui.</li>
-            </ul>
-        </div>`;
-
-        $("#result").html(html);
+        resultDiv.html(html);
     });
 });

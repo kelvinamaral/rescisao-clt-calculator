@@ -1,10 +1,94 @@
-.rescisao-form p { margin-bottom: 12px; }
-.rescisao-form input[type="number"], .rescisao-form input[type="date"], .rescisao-form select {
-    width: 100%;
-    padding: 8px;
-    box-sizing: border-box;
+/* --- Formatação do Formulário (v3.0) --- */
+.rescisao-form p { 
+    margin-bottom: 15px; 
 }
-#result ul { list-style: none; padding: 0; }
-#result li { margin-bottom: 6px; }
-.rescisao-legal { margin-top: 12px; font-size: 0.9em; color: #444; background:#f9f9f9; padding:10px; border-left:4px solid #ccc; }
-.note { margin-top:10px; font-size:0.95em; color:#222; background:#fffdf6; padding:8px; border-left:4px solid #f0c36d; }
+.rescisao-form input[type="number"], 
+.rescisao-form input[type="date"], 
+.rescisao-form select {
+    width: 100%;
+    padding: 10px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+.rescisao-form label {
+    font-weight: bold;
+}
+.rescisao-form small {
+    font-weight: normal;
+    font-size: 0.9em;
+    color: #555;
+    display: block;
+    margin-top: 3px;
+}
+.rescisao-form-grid {
+    display: grid;
+    grid-template-columns: 1fr; /* 1 coluna por padrão (mobile) */
+    gap: 20px;
+}
+
+/* Duas colunas em telas maiores (Desktop) */
+@media (min-width: 768px) {
+    .rescisao-form-grid {
+        grid-template-columns: 1fr 1fr; /* 2 colunas */
+    }
+}
+
+/* --- Formatação dos Resultados --- */
+#result ul { 
+    list-style: none; 
+    padding: 0;
+    margin-bottom: 15px;
+}
+#result h3 {
+    border-bottom: 2px solid #eee;
+    padding-bottom: 10px;
+}
+#result h4 {
+    margin-top: 20px;
+    margin-bottom: 10px;
+}
+.rescisao-results-list li { 
+    margin-bottom: 8px; 
+    padding: 8px;
+    background: #f9f9f9;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between; /* Alinha texto e valor */
+    flex-wrap: wrap;
+}
+.rescisao-results-list li span {
+    color: #333;
+}
+.rescisao-results-list.total-list li {
+    background: #f0f0f0;
+    font-size: 1.1em;
+}
+.rescisao-results-list strong {
+    color: #000;
+}
+
+/* --- Avisos Legais --- */
+.rescisao-legal { 
+    margin-top: 15px; 
+    font-size: 0.9em; 
+    color: #444; 
+    background:#f9f9f9; 
+    padding:12px; 
+    border-left: 4px solid #ccc; 
+}
+.note { 
+    margin-top: 15px; 
+    font-size: 0.95em; 
+    color:#222; 
+    background:#fffdf6; 
+    padding:12px; 
+    border-left: 4px solid #f0c36d; 
+}
+.note ul {
+    list-style: disc;
+    padding-left: 20px;
+}
+.note li {
+    margin-bottom: 8px;
+}

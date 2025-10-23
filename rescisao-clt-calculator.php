@@ -1,8 +1,8 @@
 <?php
 /**
- * Plugin Name: Rescisão CLT - Calculadora Simples (JS Avançado)
- * Description: Calculadora de rescisão CLT (client-side JS). Shortcode [rescisao_clt_calculator]. Valores estimativos.
- * Version: 1.2
+ * Plugin Name: Rescisão CLT - Calculadora
+ * Description: Calculadora de rescisão CLT (client-side JS) baseada em verbas rescisórias. Shortcode [rescisao_clt_calculator].
+ * Version: 3.0
  * Author: Kelvin Amaral
  */
 
@@ -15,12 +15,12 @@ class RescisaoCLTCalculatorJS {
     }
 
     public function enqueue(){
-        wp_enqueue_style('rescisao-clt-style', plugins_url('style.css', __FILE__));
+        wp_enqueue_style('rescisao-clt-style', plugins_url('style.css', __FILE__), array(), '3.0');
         wp_enqueue_script(
             'rescisao-clt-script',
             plugins_url('script.js', __FILE__),
             array('jquery'),
-            false,
+            '3.0',
             true
         );
     }
@@ -30,29 +30,67 @@ class RescisaoCLTCalculatorJS {
         ?>
         <div class="rescisao-clt-wrap">
             <form id="rescisaoForm" class="rescisao-form" onsubmit="return false;">
-                <p><label>Salário bruto mensal (R$)<br><input type="number" id="salary" min="0" step="0.01" placeholder="ex: 2600" required></label></p>
+                
+                <div class="rescisao-form-grid">
+                    
+                    <div class="form-col">
+                        <p><label>Salário (R$)
+                            <br><small>Seu salário bruto médio (base de cálculo)</small>
+                            <input type="number" id="salario_bruto" min="0" step="0.01" placeholder="ex: 2600.00" required>
+                        </label></p>
 
-                <p><label>Data de admissão<br><input type="date" id="admission" required></label></p>
-                <p><label>Data de demissão<br><input type="date" id="dismissal" required></label></p>
+                        <p><label>Data de contratação
+                            <br><small>Data de início do contrato</small>
+                            <input type="date" id="data_contratacao" required>
+                        </label></p>
 
-                <p><label>Dias trabalhados no mês da rescisão<br>
-                <input type="number" id="days_worked" min="0" max="31" placeholder="deixe em branco para calcular automaticamente"></label></p>
+                        <p><label>Aviso prévio
+                            <br><select id="aviso_previo">
+                                <option value="" disabled selected>Selecione</option>
+                                <option value="trabalhado">Trabalhado (cumpriu o aviso)</option>
+                                <option value="indenizado">Indenizado (empresa pagou)</option>
+                                <option value="nao_cumprido">Não cumprido (pedido de demissão)</option>
+                            </select>
+                        </label></p>
+                        
+                        <p><label>13º não recebidos
+                            <br><small>Qtd. de 13º de anos anteriores não pagos</small>
+                           <input type="number" id="decimo_terceiro_atrasado" min="0" value="0">
+                        </label></p>
+                    </div>
 
-                <p><label>Tipo de rescisão<br>
-                    <select id="type">
-                        <option value="sem_justa_causa">Demissão sem justa causa</option>
-                        <option value="pedido">Pedido de demissão</option>
-                        <option value="acordo">Rescisão por acordo</option>
-                    </select>
+                    <div class="form-col">
+                        <p><label>Forma de demissão
+                            <br><select id="forma_demissao">
+                                <option value="" disabled selected>Selecione</option>
+                                <option value="sem_justa_causa">Sem justa causa</option>
+                                <option value="com_justa_causa">Com justa causa</option>
+                                <option value="rescisao_indireta">Rescisão indireta</option>
+                                <option value="pedido_demissao">Pedido de demissão</option>
+                            </select>
+                        </label></p>
+
+                        <p><label>Data de dispensa
+                            <br><small>Último dia de trabalho</small>
+                            <input type="date" id="data_dispensa" required>
+                        </label></p>
+
+                        <p><label>Férias vencidas
+                           <br><small>Qtd. de dias de férias vencidas não gozadas</small>
+                           <input type="number" id="ferias_vencidas_dias" min="0" max="30" value="0">
+                        </label></p>
+                        
+                        <p><label>Horas extras não pagas (Valor em R$)
+                           <br><small>Valor total em R$ (se souber)</small>
+                           <input type="number" id="horas_extras_valor" min="0" step="0.01" value="0">
+                        </label></p>
+                    </div>
+                </div>
+
+                <p><label>
+                    <input type="checkbox" id="adicional_insalubridade">
+                    Você recebia ou deveria receber adicional de insalubridade e/ou periculosidade?
                 </label></p>
-
-                <p><label><input type="checkbox" id="aviso_indennizado"> Aviso prévio indenizado</label></p>
-
-                <p><label><input type="checkbox" id="vacation_vencida"> Férias vencidas</label>
-                   <input type="number" id="vacation_days" min="1" max="365" value="30"></p>
-
-                <p><label>Saldo FGTS atual (opcional, R$) — informe apenas se quiser estimar a multa FGTS<br>
-                <input type="number" id="fgts_balance" min="0" step="0.01" placeholder="ex: 1200.00"></label></p>
 
                 <p><button type="button" id="calcBtn">Calcular</button></p>
             </form>
@@ -60,7 +98,7 @@ class RescisaoCLTCalculatorJS {
             <div id="result" aria-live="polite"></div>
 
             <div id="legal" class="rescisao-legal">
-                <p><strong>Aviso:</strong> Esta calculadora fornece estimativas. Multa do FGTS só pode ser calculada corretamente a partir do saldo real do FGTS. Valores exibidos não têm validade legal. Consulte um profissional ou o sindicato.</p>
+                <p><strong>Aviso:</strong> Esta calculadora fornece estimativas brutas e não substitui o cálculo oficial. Valores exibidos não têm validade legal ou fiscal. **INSS e IRRF não são descontados**.</p>
             </div>
         </div>
         <?php
