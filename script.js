@@ -481,20 +481,33 @@ jQuery(document).ready(function ($) {
 
         $('#res-liquido').text(formatCurrency(liquido));
 
-        // FGTS (informativo)
-        const fgtsSaldoSalario = (proventos.saldoSala !== "-") ? parseFloat(proventos.saldoSala) * 0.08 : 0;
-        const fgts13 = (proventos.prop13 !== "-") ? parseFloat(proventos.prop13) * 0.08 : 0;
-        const fgtsMes = fgtsSaldoSalario + fgts13;
+        // --- FGTS (correto) ---
+        const fgtsItens = [
+            proventos.saldoSala,
+            proventos.avPrev,
+            proventos.prop13,
+            proventos.prop13Inde,
+            proventos.ferVcd,
+            proventos.ferVcd1_3,
+            proventos.ferProps,
+            proventos.ferProps1_3,
+            proventos.ferIndeni,
+            proventos.ferIndeni1_3
+        ];
 
-        // A multa de 40% é sobre o saldo total do FGTS, que não temos. Apenas uma estimativa.
+        const fgtsRescisao = fgtsItens
+          .map(v => (v !== "-" && !isNaN(parseFloat(v))) ? parseFloat(v) * 0.08 : 0)
+          .reduce((a, b) => a + b, 0);
+
+        // Se quiser estimar saldo acumulado, use meses trabalhados * salário * 8%
         let multaFgts = 0;
         if (calc.motResc === 'semJustaCausa') {
-            const totalMesesTrabalhados = moment(calc.dataRec).diff(moment(calc.dataAdm), 'months');
-            const saldoEstimadoFgts = calc.ultSal * totalMesesTrabalhados * 0.08;
-            multaFgts = saldoEstimadoFgts * 0.4;
+            const mesesTrabalhados = moment(calc.dataRec).diff(moment(calc.dataAdm), 'months');
+            const saldoFgtsEstimado = (calc.ultSal * mesesTrabalhados * 0.08) + fgtsRescisao;
+            multaFgts = saldoFgtsEstimado * 0.4;
         }
-        
-        $('#res-fgts-mes').text(formatCurrency(fgtsMes));
+
+        $('#res-fgts-mes').text(formatCurrency(fgtsRescisao));
         $('#res-multa-fgts').text(formatCurrency(multaFgts));
 
         $('#resultado').slideDown();
