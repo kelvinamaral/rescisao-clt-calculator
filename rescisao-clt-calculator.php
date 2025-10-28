@@ -89,11 +89,6 @@ class RescisaoCLTCalculator {
                         <label for="diasFerVenc">Dias de férias vencidas</label>
                         <input type="number" id="diasFerVenc" value="30" min="0">
                     </p>
-                    
-                    <p class="form-group">
-                        <label for="filhosMen14">Nº de Filhos Menores de 14 anos</label>
-                        <input type="number" id="filhosMen14" value="0" min="0">
-                    </p>
                 </div>
 
                 <p class="form-actions">
@@ -112,7 +107,6 @@ class RescisaoCLTCalculator {
                             <tr><td>Saldo do salário</td><td id="res-saldo-salario" class="money">R$ 0,00</td></tr>
                             <tr><td>Aviso prévio indenizado</td><td id="res-aviso-previo" class="money">R$ 0,00</td></tr>
                             <tr><td>Reembolso Contrato Antecipado Empregador</td><td id="res-rec-ant-empre" class="money">R$ 0,00</td></tr>
-                            <tr><td>Salário Família</td><td id="res-sal-famili" class="money">R$ 0,00</td></tr>
                             <tr><td>13º salário proporcional</td><td id="res-13-proporcional" class="money">R$ 0,00</td></tr>
                             <tr><td>13º salário indenizado</td><td id="res-13-indenizado" class="money">R$ 0,00</td></tr>
                             <tr><td>Férias vencidas (30 dias ou mais)</td><td id="res-ferias-vencidas" class="money">R$ 0,00</td></tr>
@@ -162,7 +156,7 @@ class RescisaoCLTCalculator {
             </div>
 
             <div class="rescisao-legal">
-                <p><strong>Aviso Legal:</strong> Esta é uma ferramenta de simulação e os resultados são estimativas. Os valores podem variar conforme convenções coletivas e outras particularidades do contrato de trabalho. Para valores exatos, consulte o sindicato da sua categoria ou um profissional de contabilidade.</p>
+                <p><strong>Aviso Legal:</strong> Esta é uma ferramenta de simulação e os resultados são estimativas. Os valores podem variar e dependem das informações prestadas, além de adequação a convenções coletivas e outras particularidades do contrato de trabalho, servindo apenas como mera estimativa aproximada.</p>
             </div>
         </div>
         <?php

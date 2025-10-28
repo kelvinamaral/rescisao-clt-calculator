@@ -27,10 +27,6 @@ jQuery(document).ready(function ($) {
             aliquotaFaixa2: .15,
             aliquotaFaixa3: .225,
             aliquotaMaxima: .275
-        },
-        salarioFamilia: {
-            limiteMaximo: 1819.26,
-            cota: 62.04
         }
     };
 
@@ -116,19 +112,6 @@ jQuery(document).ready(function ($) {
     function calculaSal(ultSal, dataRec) {
         const momentRec = moment(dataRec);
         return (ultSal / momentRec.daysInMonth() * parseInt(momentRec.format("DD"))).toFixed(2);
-    }
-    
-    function calcSalFamili(ultSal, dataRec, filhosMen14, avsPrev, dataAdm) {
-        const saldoSalario = parseFloat(calculaSal(ultSal, dataRec));
-        const diasAvsPrev = calcDiasAvsPrev(dataAdm, dataRec, avsPrev);
-        const avPrev = (ultSal / 30 * diasAvsPrev);
-        const base = saldoSalario + avPrev;
-
-        if (base < CONSTANTES.salarioFamilia.limiteMaximo) {
-            const valor = filhosMen14 * CONSTANTES.salarioFamilia.cota;
-            if (parseInt(valor) !== 0) return valor.toFixed(2);
-        }
-        return "-";
     }
 
     function calculaAvsPrev(ultSal, motResc, avsPrev, dataAdm, dataRec) {
@@ -396,8 +379,7 @@ jQuery(document).ready(function ($) {
             ferVcd: $('#ferVcd').val(),
             avsPrev: $('#avsPrev').val(),
             motResc: $('#motResc').val(),
-            diasFerVenc: $('#diasFerVenc').val(),
-            filhosMen14: parseInt($('#filhosMen14').val()) || 0
+            diasFerVenc: $('#diasFerVenc').val()
         };
         
         // Validações
@@ -419,7 +401,6 @@ jQuery(document).ready(function ($) {
         proventos.saldoSala = calculaSal(calc.ultSal, calc.dataRec);
         proventos.avPrev = calculaAvsPrev(calc.ultSal, calc.motResc, calc.avsPrev, calc.dataAdm, calc.dataRec);
         proventos.recAntEmpre = calcRescAntecip(calc.ultSal, calc.motResc, calc.dataRec, calc.dataPrev);
-        proventos.salFamili = calcSalFamili(calc.ultSal, calc.dataRec, calc.filhosMen14, calc.avsPrev, calc.dataAdm);
         
         const prop13 = calc13Prop(calc.ultSal, calc.dataAdm, calc.dataRec, calc.motResc);
         proventos.prop13 = prop13;
@@ -462,7 +443,6 @@ jQuery(document).ready(function ($) {
         $('#res-saldo-salario').text(formatCurrency(proventos.saldoSala));
         $('#res-aviso-previo').text(formatCurrency(proventos.avPrev));
         $('#res-rec-ant-empre').text(formatCurrency(proventos.recAntEmpre));
-        $('#res-sal-famili').text(formatCurrency(proventos.salFamili));
         $('#res-13-proporcional').text(formatCurrency(proventos.prop13));
         $('#res-13-indenizado').text(formatCurrency(proventos.prop13Inde));
         $('#res-ferias-vencidas').text(formatCurrency(proventos.ferVcd));
