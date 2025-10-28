@@ -164,7 +164,13 @@ jQuery(document).ready(function ($) {
         const total13Avos = calc13Prop(ultSal, dataAdm, dataProjetada, motResc);
         const valorTotal13 = parseFloat(total13Avos) || 0;
         
-        const indenizado = valorTotal13 - prop13;
+        let indenizado;
+        if (moment(dataRec).year() < moment(dataProjetada).year()) {
+            const prop13FimAno = parseFloat(calc13Prop(ultSal, dataAdm, moment(dataRec).endOf('year').format('YYYY-MM-DD'), motResc)) || 0;
+            indenizado = (prop13FimAno - prop13) + valorTotal13;
+        } else {
+            indenizado = valorTotal13 - prop13;
+        }
 
         return indenizado > 0 ? indenizado.toFixed(2) : "-";
     }
@@ -237,10 +243,22 @@ jQuery(document).ready(function ($) {
         const diasAvsPrev = calcDiasAvsPrev(dataAdm, dataRec, avsPrev);
         const dataProje = calcDataProje(dataRec, diasAvsPrev);
         
-        const avosTotais = getAvosDeFerias(dataAdm, dataProje);
         const avosProporcionais = getAvosDeFerias(dataAdm, dataRec);
-        
-        const avosIndenizados = avosTotais - avosProporcionais;
+        const avosTotais = getAvosDeFerias(dataAdm, dataProje);
+
+        const startRec = calcDataUltPerFer(dataAdm, dataRec);
+        const startProj = calcDataUltPerFer(dataAdm, dataProje);
+
+        let avosIndenizados;
+        if (moment(startRec).isSame(startProj)) {
+            avosIndenizados = avosTotais - avosProporcionais;
+        } else {
+            const fimPeriodoAntigo = moment(startRec).add(1, 'year').subtract(1, 'day');
+            const avosFimPeriodo = getAvosDeFerias(dataAdm, fimPeriodoAntigo.format('YYYY-MM-DD'));
+            const avosGanhosNoPeriodoAntigo = avosFimPeriodo - avosProporcionais;
+            
+            avosIndenizados = avosGanhosNoPeriodoAntigo + avosTotais;
+        }
         
         if (avosIndenizados > 0) {
             const valor = (ultSal / 12) * avosIndenizados;
