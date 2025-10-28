@@ -502,7 +502,9 @@ jQuery(document).ready(function ($) {
         // Se quiser estimar saldo acumulado, use meses trabalhados * salário * 8%
         let multaFgts = 0;
         if (calc.motResc === 'semJustaCausa') {
-            const mesesTrabalhados = moment(calc.dataRec).diff(moment(calc.dataAdm), 'months');
+            const dataAdmObj = moment(calc.dataAdm);
+            const dataRecObj = moment(calc.dataRec);
+            const mesesTrabalhados = (dataRecObj.year() - dataAdmObj.year()) * 12 - dataAdmObj.month() + dataRecObj.month() + 1;
             const saldoFgtsEstimado = (calc.ultSal * mesesTrabalhados * 0.08) + fgtsRescisao;
             multaFgts = saldoFgtsEstimado * 0.4;
         }
