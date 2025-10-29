@@ -156,9 +156,9 @@ class RescisaoCLTCalculator {
                         </thead>
                         <tbody>
                             <tr>
-                                <td>FGTS a depositar na rescisão</td>
-                                <td id="res-fgts-mes" class="money">R$ 0,00</td>
-                                <td>Depositado na conta do FGTS, não recebido em dinheiro</td>
+                                <td>FGTS depositado (calculado de forma simulada)</td>
+                                <td id="res-saldo-fgts-total" class="money">R$ 0,00</td>
+                                <td>(Salário x Meses) + FGTS da rescisão</td>
                             </tr>
                             <tr>
                                 <td>Multa de 40% sobre o FGTS (estimativa)</td>

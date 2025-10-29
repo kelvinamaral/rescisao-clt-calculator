@@ -521,6 +521,7 @@ jQuery(document).ready(function ($) {
 
         // --- Atualização da UI (FGTS) ---
         $('#res-fgts-mes').text(formatCurrency(fgtsDepositoMes));
+        $('#res-saldo-fgts-total').text(formatCurrency(saldoFgtsTotalEstimado));
         $('#res-multa-fgts').text(formatCurrency(multaFgts));
 
         $('#resultado').slideDown();
