@@ -36,7 +36,7 @@ class RescisaoCLTCalculator {
         ob_start(); ?>
         <div class="rescisao-clt-wrap">
             <form id="rescisaoForm" class="rescisao-form">
-                <h3 class="form-title">Simulador de Rescisão</h3>
+                <h3 class="form-title">Cálculo de saída do trabalho</h3>
 
                 <div class="form-grid">
                     <p class="form-group">
@@ -69,7 +69,7 @@ class RescisaoCLTCalculator {
                     </p>
 
                     <p class="form-group">
-                        <label for="avsPrev">Aviso Prévio (Dispensa sem Justa Causa)</label>
+                        <label for="avsPrev">Aviso Prévio</label>
                         <select id="avsPrev" required>
                             <option value="0">Trabalhado</option>
                             <option value="1">Indenizado</option>
