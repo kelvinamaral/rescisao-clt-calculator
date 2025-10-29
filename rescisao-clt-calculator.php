@@ -148,6 +148,7 @@ class RescisaoCLTCalculator {
                     <h4>Outras Informações (Não incluídas no líquido)</h4>
                     <table>
                         <tbody>
+                            <tr><td>Saldo Total Estimado de FGTS para Multa</td><td id="res-saldo-fgts-total" class="money">R$ 0,00</td></tr>
                             <tr><td>FGTS a ser depositado na rescisão</td><td id="res-fgts-mes" class="money">R$ 0,00</td></tr>
                             <tr><td>Multa de 40% sobre FGTS (estimativa)</td><td id="res-multa-fgts" class="money">R$ 0,00</td></tr>
                         </tbody>

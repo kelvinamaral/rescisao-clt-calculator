@@ -482,42 +482,45 @@ jQuery(document).ready(function ($) {
         $('#res-liquido').text(formatCurrency(liquido));
 
         // --- FGTS ---
-        // O FGTS incide sobre o saldo de salário, aviso prévio indenizado e 13º salário.
-        // Não incide sobre férias indenizadas (e seu terço), conforme jurisprudência.
+        // 1. Define as bases de cálculo para o FGTS (8%)
         const fgtsBaseItems = [
             proventos.saldoSala,
             proventos.avPrev,
-            proventos.prop13,
-            proventos.prop13Inde
+            proventos.prop13, // 13º Proporcional (Mês a Mês)
+            proventos.prop13Inde // 13º Indenizado (Aviso Prévio)
         ];
 
-        const fgtsDepositoMes = fgtsBaseItems
+        // 2. Calcula o FGTS a ser depositado no MÊS DA RESCISÃO (FGTS Rescisório)
+        // Isso inclui Saldo Salário, API, 13º Prop. do Mês, 13º Indenizado.
+        const baseFgtsRescisorio = fgtsBaseItems
           .map(v => (v !== "-" && !isNaN(parseFloat(v))) ? parseFloat(v) : 0)
-          .reduce((a, b) => a + b, 0) * 0.08;
+          .reduce((a, b) => a + b, 0);
+
+        const fgtsDepositoMes = baseFgtsRescisorio * 0.08; // FGTS Rescisório
 
         let multaFgts = 0;
+        let saldoFgtsTotalEstimado = 0;
+
         // A multa de 40% é devida em dispensas sem justa causa ou rescisão antecipada pelo empregador.
         if (calc.motResc === 'semJustaCausa' || calc.motResc === 'rescAntEmpre') {
             const dataAdmObj = moment(calc.dataAdm);
             const dataRecObj = moment(calc.dataRec);
             
-            // Estima o número de meses trabalhados para o cálculo do saldo.
-            const mesesTrabalhados = dataRecObj.diff(dataAdmObj, 'months', true);
-            const mesesCompletos = Math.ceil(mesesTrabalhados);
+            // Estima os meses CHEIOS trabalhados ANTES do mês da rescisão (Jan a Maio)
+            const mesesCheiosAnteriores = dataRecObj.clone().startOf('month').diff(dataAdmObj.clone().startOf('month'), 'months');
 
-            // Saldo estimado com base nos salários mensais. É uma aproximação.
-            // A base de cálculo da multa inclui todos os depósitos da conta vinculada.
-            const fgtsEstimadoSalarios = calc.ultSal * mesesCompletos * 0.08;
+            // Saldo Estimado dos depósitos MENSAIS (Jan a Maio)
+            const fgtsEstimadoAnterior = calc.ultSal * mesesCheiosAnteriores * 0.08;
             
-            // Adiciona o FGTS sobre verbas que não são o salário mensal (aviso prévio e 13º indenizados)
-            // para uma estimativa mais precisa do saldo total, evitando a dupla contagem.
-            const fgtsExtrasRescisao = ((parseFloat(proventos.avPrev) || 0) + (parseFloat(proventos.prop13Inde) || 0)) * 0.08;
-
-            const saldoFgtsTotalEstimado = fgtsEstimadoSalarios + fgtsExtrasRescisao;
+            // O Saldo Total para Multa é a soma de TODOS os depósitos (passados + rescisórios).
+            // NOTA: O 13º Prop. já está na baseFgtsRescisorio.
+            saldoFgtsTotalEstimado = fgtsEstimadoAnterior + fgtsDepositoMes;
             
             multaFgts = saldoFgtsTotalEstimado * 0.4;
         }
 
+        // --- Atualização da UI (FGTS) ---
+        $('#res-saldo-fgts-total').text(formatCurrency(saldoFgtsTotalEstimado || 0));
         $('#res-fgts-mes').text(formatCurrency(fgtsDepositoMes));
         $('#res-multa-fgts').text(formatCurrency(multaFgts));
 
