@@ -115,9 +115,14 @@ jQuery(document).ready(function ($) {
     }
 
     function calculaAvsPrev(ultSal, motResc, avsPrev, dataAdm, dataRec) {
+        // Pagamento do aviso indenizado pelo empregador na dispensa sem justa causa
         if (motResc === "semJustaCausa" && avsPrev === "1") {
             const diasAvsPrev = calcDiasAvsPrev(dataAdm, dataRec, avsPrev);
             return (ultSal / 30 * diasAvsPrev).toFixed(2);
+        }
+        // Crédito do salário do aviso prévio trabalhado no pedido de demissão
+        if (motResc === "pediDemiss" && avsPrev === "0") {
+            return parseFloat(ultSal).toFixed(2);
         }
         return "-";
     }
@@ -337,8 +342,8 @@ jQuery(document).ready(function ($) {
         return calcDescIRFF(baseCalculo, 0); // INSS já foi deduzido
     }
 
-    function calcDescAvsPrev(ultSal, motResc) {
-        if (motResc === "pediDemiss") {
+    function calcDescAvsPrev(ultSal, motResc, avsPrev) {
+        if (motResc === "pediDemiss" && avsPrev === "1") {
             return parseFloat(ultSal).toFixed(2);
         }
         return "-";
