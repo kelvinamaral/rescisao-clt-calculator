@@ -121,9 +121,6 @@ jQuery(document).ready(function ($) {
             return (ultSal / 30 * diasAvsPrev).toFixed(2);
         }
         // Crédito do salário do aviso prévio trabalhado no pedido de demissão
-        if (motResc === "pediDemiss" && avsPrev === "0") {
-            return parseFloat(ultSal).toFixed(2);
-        }
         return "-";
     }
     
@@ -454,7 +451,7 @@ jQuery(document).ready(function ($) {
         descontos.descINSS13 = descINSS13;
         descontos.descIRRF13 = calcDescIRFF13(prop13, indeni13, descINSS13);
 
-        descontos.descAvsPrev = calcDescAvsPrev(calc.ultSal, calc.motResc);
+        descontos.descAvsPrev = calcDescAvsPrev(calc.ultSal, calc.motResc, calc.avsPrev);
         descontos.descResciAnt = calcDescRescAntecip(calc.ultSal, calc.motResc, calc.dataRec, calc.dataPrev);
 
         descontos.totalDesc = calculaDescontos(descontos);
