@@ -120,6 +120,11 @@ jQuery(document).ready(function ($) {
             const diasAvsPrev = calcDiasAvsPrev(dataAdm, dataRec, avsPrev);
             return (ultSal / 30 * diasAvsPrev).toFixed(2);
         }
+        // Pagamento de 50% do aviso indenizado no mútuo acordo
+        if (motResc === "mutuoAcordo" && avsPrev === "1") {
+            const diasAvsPrev = calcDiasAvsPrev(dataAdm, dataRec, avsPrev);
+            return ((ultSal / 30 * diasAvsPrev) / 2).toFixed(2);
+        }
         // Crédito do salário do aviso prévio trabalhado no pedido de demissão
         return "-";
     }
@@ -157,7 +162,8 @@ jQuery(document).ready(function ($) {
 
     // Calcula o 13º salário indenizado (referente à projeção do aviso prévio)
     function calc13Indeni(ultSal, dataAdm, dataRec, motResc, avsPrev) {
-        if (motResc !== "semJustaCausa" || avsPrev !== "1") return "-";
+        // O 13º indenizado é devido na integralidade em caso de aviso indenizado
+        if ((motResc !== "semJustaCausa" && motResc !== "mutuoAcordo") || avsPrev !== "1") return "-";
 
         const prop13 = parseFloat(calc13Prop(ultSal, dataAdm, dataRec, motResc)) || 0;
         const diasAviso = calcDiasAvsPrev(dataAdm, dataRec, avsPrev);
@@ -240,7 +246,8 @@ jQuery(document).ready(function ($) {
     }
 
     function calcFerIndeni(ultSal, dataAdm, dataRec, motResc, avsPrev) {
-        if (motResc !== "semJustaCausa" || avsPrev !== "1") return "-";
+        // As férias indenizadas são devidas na integralidade em caso de aviso indenizado
+        if ((motResc !== "semJustaCausa" && motResc !== "mutuoAcordo") || avsPrev !== "1") return "-";
         
         const diasAvsPrev = calcDiasAvsPrev(dataAdm, dataRec, avsPrev);
         const dataProje = calcDataProje(dataRec, diasAvsPrev);
@@ -294,7 +301,7 @@ jQuery(document).ready(function ($) {
         const teto = i + e + s + o;
 
         if (base <= t.limiteFaixa1) r = base * t.aliquotaFaixa1;
-        else if (base <= t.limiteFaixa2) r = i + (base - t.limiteFaixa1) * t.aliquotaFaixa2;
+        else if (base <= t.limiteFaixa2) r = i + e + (base - t.limiteFaixa2) * t.aliquotaFaixa3;
         else if (base <= t.limiteFaixa3) r = i + e + (base - t.limiteFaixa2) * t.aliquotaFaixa3;
         else if (base <= t.limiteFaixa4) r = i + e + s + (base - t.limiteFaixa3) * t.aliquotaFaixa4;
         else r = teto;
@@ -512,6 +519,8 @@ jQuery(document).ready(function ($) {
         // A multa de 40% é devida SOMENTE em dispensas sem justa causa ou rescisão antecipada pelo empregador.
         if (calc.motResc === 'semJustaCausa' || calc.motResc === 'rescAntEmpre') {
             multaFgts = saldoFgtsTotalEstimado * 0.4;
+        } else if (calc.motResc === 'mutuoAcordo') {
+            multaFgts = saldoFgtsTotalEstimado * 0.2; // 20% para Mútuo Acordo
         }
 
         // --- Atualização da UI (FGTS) ---

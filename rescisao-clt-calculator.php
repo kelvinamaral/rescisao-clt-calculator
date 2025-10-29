@@ -36,31 +36,30 @@ class RescisaoCLTCalculator {
         ob_start(); ?>
         <div class="rescisao-clt-wrap">
             <form id="rescisaoForm" class="rescisao-form">
-                <h3 class="form-title">Simulador de Rescisão CLT</h3>
+                <h3 class="form-title">Simulador de Rescisão</h3>
 
                 <div class="form-grid">
                     <p class="form-group">
-                        <label for="ultSal">Salário Bruto (R$)</label>
+                        <label for="ultSal">Salário mensal R$ (valor mensal recebido em média)</label>
                         <input type="text" id="ultSal" placeholder="Ex: 1518,00" required>
                     </p>
                     <p class="form-group">
-                        <label for="dataAdm">Data de Admissão</label>
+                        <label for="dataAdm">Data de Admissão (primeiro dia de trabalho/contrato)</label>
                         <input type="date" id="dataAdm" required>
                     </p>
                     <p class="form-group">
-                        <label for="dataRec">Data da Rescisão</label>
+                        <label for="dataRec">Data da Rescisão - Saída (último dia de trabalho/contrato)</label>
                         <input type="date" id="dataRec" required>
                     </p>
                     <p class="form-group">
                         <label for="motResc">Motivo da Rescisão</label>
                         <select id="motResc" required>
                             <option value="">Selecione...</option>
-                            <option value="semJustaCausa">Dispensa sem justa causa</option>
-                            <option value="pediDemiss">Pedido de demissão</option>
-                            <option value="comJustaCausa">Dispensa com justa causa</option>
-                            <option value="rescAntEmpre">Rescisão Antecipada pelo Empregador (Contrato Prazo)</option>
-                            <option value="rescAntFunc">Rescisão Antecipada pelo Funcionário (Contrato Prazo)</option>
-                            <option value="expTermino">Término de Contrato de Experiência/Prazo</option>
+                            <option value="semJustaCausa">Dispensa sem justa causa (empresa demitindo)</option>
+                            <option value="pediDemiss">Pedido de demissão (trabalhador pedindo demissão)</option>
+                            <option value="comJustaCausa">Dispensa com justa causa (empresa demitindo por justa causa)</option>
+                            <option value="expTermino">Término de Contrato de Experiência</option>
+			    <option value="mutuoAcordo">Mútuo Acordo</option>
                         </select>
                     </p>
                     
@@ -161,9 +160,9 @@ class RescisaoCLTCalculator {
                                 <td>(Salário x Meses) + FGTS da rescisão</td>
                             </tr>
                             <tr>
-                                <td>Multa de 40% sobre o FGTS (estimativa)</td>
+                                <td>Multa Indenizatória sobre o FGTS (estimativa)</td>
                                 <td id="res-multa-fgts" class="money">R$ 0,00</td>
-                                <td>Pago apenas em caso de demissão sem justa causa</td>
+                                <td>40% para dispensa sem justa causa, 20% para Mútuo Acordo</td>
                             </tr>
                         </tbody>
                     </table>
@@ -171,7 +170,7 @@ class RescisaoCLTCalculator {
             </div>
 
             <div class="rescisao-legal">
-                <p><strong>Aviso Legal:</strong> Esta é uma ferramenta de simulação e os resultados são estimativas. Os valores podem variar e dependem das informações prestadas, além de adequação a convenções coletivas e outras particularidades do contrato de trabalho, servindo apenas como mera estimativa aproximada.</p>
+                <p><strong>Aviso Legal:</strong> Esta é uma ferramenta de simulação e os resultados são estimativas das respostas apresentadas, podendo ainda variar em relação a convenção coletiva e outras particularidades do contrato de trabalho, servindo apenas como mera simulação hipotética, sem efeitos legais.</p>
             </div>
         </div>
         <?php
