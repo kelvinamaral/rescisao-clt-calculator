@@ -160,9 +160,9 @@ class RescisaoCLTCalculator {
                                 <td>(Salário x Meses) + FGTS da rescisão</td>
                             </tr>
                             <tr>
-                                <td>Multa Indenizatória sobre o FGTS (estimativa)</td>
+                                <td>Multa de <span id="res-multa-fgts-porcentagem">40%</span> sobre o FGTS (estimativa)</td>
                                 <td id="res-multa-fgts" class="money">R$ 0,00</td>
-                                <td>40% para dispensa sem justa causa, 20% para Mútuo Acordo</td>
+                                <td>Pago apenas em casos de demissão sem justa causa ou mútuo acordo</td>
                             </tr>
                         </tbody>
                     </table>

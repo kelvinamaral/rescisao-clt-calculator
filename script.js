@@ -466,7 +466,7 @@ jQuery(document).ready(function ($) {
         // --- Resultado Final ---
         const liquido = calculaValTotal(proventos.totalVenci, descontos.totalDesc);
 
-        // --- Atualização da UI ---
+        // --- Atualização da UI (Proventos e Descontos) ---
         $('#res-saldo-salario').text(formatCurrency(proventos.saldoSala));
         $('#res-aviso-previo').text(formatCurrency(proventos.avPrev));
         $('#res-rec-ant-empre').text(formatCurrency(proventos.recAntEmpre));
@@ -508,6 +508,14 @@ jQuery(document).ready(function ($) {
         const fgtsDepositoMes = baseFgtsRescisorio * 0.08; // FGTS Rescisório
 
         let multaFgts = 0;
+        let multaFgtsPercent = "0%"; // Variável para armazenar a porcentagem para exibição
+
+        // A multa de 40% é devida SOMENTE em dispensas sem justa causa ou rescisão antecipada pelo empregador.
+        if (calc.motResc === 'semJustaCausa' || calc.motResc === 'rescAntEmpre') {
+            multaFgtsPercent = "40%";
+        } else if (calc.motResc === 'mutuoAcordo') {
+            multaFgtsPercent = "20%"; // 20% para Mútuo Acordo
+        }
         
         // Calcula o saldo estimado TOTAL em todos os casos.
         const dataAdmObj = moment(calc.dataAdm);
@@ -516,17 +524,21 @@ jQuery(document).ready(function ($) {
         const fgtsEstimadoAnterior = calc.ultSal * mesesCheiosAnteriores * 0.08;
         const saldoFgtsTotalEstimado = fgtsEstimadoAnterior + fgtsDepositoMes;
 
-        // A multa de 40% é devida SOMENTE em dispensas sem justa causa ou rescisão antecipada pelo empregador.
-        if (calc.motResc === 'semJustaCausa' || calc.motResc === 'rescAntEmpre') {
+        // Aplica a multa do FGTS com base na porcentagem calculada
+        if (multaFgtsPercent === "40%") {
             multaFgts = saldoFgtsTotalEstimado * 0.4;
-        } else if (calc.motResc === 'mutuoAcordo') {
-            multaFgts = saldoFgtsTotalEstimado * 0.2; // 20% para Mútuo Acordo
+        } else if (multaFgtsPercent === "20%") {
+            multaFgts = saldoFgtsTotalEstimado * 0.2;
+        } else {
+            multaFgts = 0;
         }
 
         // --- Atualização da UI (FGTS) ---
         $('#res-fgts-mes').text(formatCurrency(fgtsDepositoMes));
         $('#res-saldo-fgts-total').text(formatCurrency(saldoFgtsTotalEstimado));
         $('#res-multa-fgts').text(formatCurrency(multaFgts));
+        // NOVO: Atualiza a porcentagem exibida dinamicamente
+        $('#res-multa-fgts-porcentagem').text(multaFgtsPercent);
 
         $('#resultado').slideDown();
     });
