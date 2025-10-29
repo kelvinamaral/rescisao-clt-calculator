@@ -153,8 +153,49 @@
     border-left: 4px solid #bdc3c7;
 }
 
+.resultado-info-adicional h4 {
+    line-height: 1.4;
+    color: #34495e;
+    border-bottom: 2px solid #ddd;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.resultado-info-adicional h4 small {
+    font-weight: normal;
+    font-size: 0.75em;
+    color: #7f8c8d;
+}
+
 .resultado-info-adicional table {
     width: 100%;
+    border-collapse: collapse; /* Garante que as bordas se unam */
+}
+
+.resultado-info-adicional th, .resultado-info-adicional td {
+    padding: 12px 8px;
+    border-bottom: 1px solid #ddd; /* Linha separadora */
+    text-align: left; /* Alinhamento padrão */
+}
+
+.resultado-info-adicional th {
+    background-color: #ecf0f1; /* Cor de fundo para o cabeçalho */
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+/* Coluna Descrição (1ª) e Observação (3ª) */
+.resultado-info-adicional td:first-child, .resultado-info-adicional td:nth-child(3) {
+    text-align: left;
+    color: #555;
+}
+
+/* Coluna Valor (2ª) */
+.resultado-info-adicional td:nth-child(2) {
+    text-align: right;
+    font-weight: 600;
+    color: #2c3e50;
 }
 
 /* === Responsividade === */

@@ -145,11 +145,26 @@ class RescisaoCLTCalculator {
                 </div>
 
                  <div class="resultado-info-adicional">
-                    <h4>Outras Informações (Não incluídas no líquido)</h4>
+                    <h4><strong>Informações Adicionais</strong><br><small>(valores não pagos diretamente ao trabalhador)</small></h4>
                     <table>
+                        <thead>
+                            <tr>
+                                <th>Descrição</th>
+                                <th>Valor</th>
+                                <th>Observação</th>
+                            </tr>
+                        </thead>
                         <tbody>
-                            <tr><td>FGTS a ser depositado na rescisão</td><td id="res-fgts-mes" class="money">R$ 0,00</td></tr>
-                            <tr><td>Multa de 40% sobre FGTS (estimativa)</td><td id="res-multa-fgts" class="money">R$ 0,00</td></tr>
+                            <tr>
+                                <td>FGTS a depositar na rescisão</td>
+                                <td id="res-fgts-mes" class="money">R$ 0,00</td>
+                                <td>Depositado na conta do FGTS, não recebido em dinheiro</td>
+                            </tr>
+                            <tr>
+                                <td>Multa de 40% sobre o FGTS (estimativa)</td>
+                                <td id="res-multa-fgts" class="money">R$ 0,00</td>
+                                <td>Pago apenas em caso de demissão sem justa causa</td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
