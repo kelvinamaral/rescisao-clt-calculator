@@ -499,23 +499,16 @@ jQuery(document).ready(function ($) {
         const fgtsDepositoMes = baseFgtsRescisorio * 0.08; // FGTS Rescisório
 
         let multaFgts = 0;
-        let saldoFgtsTotalEstimado = 0;
+        
+        // Calcula o saldo estimado TOTAL em todos os casos.
+        const dataAdmObj = moment(calc.dataAdm);
+        const dataRecObj = moment(calc.dataRec);
+        const mesesCheiosAnteriores = dataRecObj.clone().startOf('month').diff(dataAdmObj.clone().startOf('month'), 'months');
+        const fgtsEstimadoAnterior = calc.ultSal * mesesCheiosAnteriores * 0.08;
+        const saldoFgtsTotalEstimado = fgtsEstimadoAnterior + fgtsDepositoMes;
 
-        // A multa de 40% é devida em dispensas sem justa causa ou rescisão antecipada pelo empregador.
+        // A multa de 40% é devida SOMENTE em dispensas sem justa causa ou rescisão antecipada pelo empregador.
         if (calc.motResc === 'semJustaCausa' || calc.motResc === 'rescAntEmpre') {
-            const dataAdmObj = moment(calc.dataAdm);
-            const dataRecObj = moment(calc.dataRec);
-            
-            // Estima os meses CHEIOS trabalhados ANTES do mês da rescisão (Jan a Maio)
-            const mesesCheiosAnteriores = dataRecObj.clone().startOf('month').diff(dataAdmObj.clone().startOf('month'), 'months');
-
-            // Saldo Estimado dos depósitos MENSAIS (Jan a Maio)
-            const fgtsEstimadoAnterior = calc.ultSal * mesesCheiosAnteriores * 0.08;
-            
-            // O Saldo Total para Multa é a soma de TODOS os depósitos (passados + rescisórios).
-            // NOTA: O 13º Prop. já está na baseFgtsRescisorio.
-            saldoFgtsTotalEstimado = fgtsEstimadoAnterior + fgtsDepositoMes;
-            
             multaFgts = saldoFgtsTotalEstimado * 0.4;
         }
 
